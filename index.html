@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OCU Branching Loss Calculator – Ceragon Networks</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --navy: #0a1628;
+  --blue: #0d47a1;
+  --blue-mid: #1565c0;
+  --blue-lt: #1976d2;
+  --accent: #00b0ff;
+  --accent2: #ff6d00;
+  --bg: #eef1f6;
+  --card: #ffffff;
+  --border: #d4dae6;
+  --text: #1a2235;
+  --text2: #4a5568;
+  --row-alt: #f6f8fb;
+  --result-bg: #e8f0fe;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header {
+  background: linear-gradient(120deg, #071020 0%, var(--blue) 100%);
+  padding: 0 2rem;
+  display: flex; align-items: center; gap: 1.2rem;
+  height: 68px;
+  box-shadow: 0 3px 16px rgba(0,0,0,0.35);
+  position: sticky; top: 0; z-index: 100;
+}
+.h-logo {
+  background: var(--accent); color: var(--navy);
+  width: 38px; height: 38px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.78rem; letter-spacing: -0.5px; flex-shrink: 0;
+}
+.h-text h1 { color: #fff; font-size: 1.15rem; font-weight: 600; }
+.h-text p  { color: rgba(255,255,255,0.55); font-size: 0.72rem; margin-top: 1px; }
+.h-badge {
+  margin-left: auto;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px; padding: 3px 12px;
+  font-size: 0.7rem; color: rgba(255,255,255,0.7);
+}
+
+/* LAYOUT */
+.wrap { max-width: 1200px; margin: 0 auto; padding: 1.75rem 1.5rem; }
+.grid { display: grid; grid-template-columns: 370px 1fr; gap: 1.5rem; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+/* NOTICE */
+.notice {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: #fff8e1; border: 1px solid #ffcc02; border-left: 4px solid var(--accent2);
+  border-radius: 8px; padding: 0.7rem 1rem; margin-bottom: 1.25rem;
+  font-size: 0.78rem; color: #5d4037;
+}
+
+/* CARD */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.card-hd {
+  background: linear-gradient(90deg, var(--navy), var(--blue-mid));
+  padding: 0.8rem 1.2rem; display: flex; align-items: center; gap: 0.55rem;
+}
+.card-hd h2 { color: #fff; font-size: 0.88rem; font-weight: 600; letter-spacing: 0.3px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.card-bd { padding: 1.2rem; }
+
+/* FORM */
+.fg { margin-bottom: 0.9rem; }
+.fg:last-child { margin-bottom: 0; }
+label { display: block; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); margin-bottom: 4px; }
+select {
+  width: 100%; padding: 8px 36px 8px 11px;
+  border: 1.5px solid var(--border); border-radius: 7px;
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 0.88rem; color: var(--text);
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%231565c0' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center;
+  appearance: none; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+}
+select:focus { outline: none; border-color: var(--blue-lt); box-shadow: 0 0 0 3px rgba(25,118,210,0.15); }
+select:disabled { background-color: #f3f3f3; color: #aaa; cursor: not-allowed; }
+.fr { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+.calc-btn {
+  width: 100%; padding: 10px; margin-top: 1rem;
+  background: linear-gradient(135deg, var(--blue), var(--blue-lt));
+  color: white; border: none; border-radius: 8px;
+  font-family: 'IBM Plex Sans', sans-serif; font-size: 0.92rem; font-weight: 600;
+  cursor: pointer; letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(13,71,161,0.3);
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.calc-btn:hover { box-shadow: 0 4px 14px rgba(13,71,161,0.4); transform: translateY(-1px); }
+.calc-btn:active { transform: none; }
+
+.cfg-id {
+  background: #e3f2fd; border: 1px dashed var(--blue-lt); border-radius: 7px;
+  padding: 7px 11px; margin-top: 0.7rem; font-size: 0.75rem; color: var(--blue);
+}
+.cfg-id span { font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
+
+/* RESULTS */
+.placeholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 3rem 1rem; text-align: center; color: #90a4ae;
+}
+.placeholder svg { margin-bottom: 0.9rem; opacity: 0.35; }
+.placeholder p { font-size: 0.88rem; line-height: 1.6; }
+.r-content { display: none; }
+
+/* KPI row */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.65rem; margin-bottom: 1.1rem; }
+@media (max-width: 600px) { .kpis { grid-template-columns: 1fr 1fr; } }
+.kpi {
+  background: linear-gradient(135deg, var(--navy), var(--blue-mid));
+  border-radius: 9px; padding: 0.85rem 0.75rem; text-align: center; color: white;
+}
+.kpi.hi { background: linear-gradient(135deg, #bf360c, var(--accent2)); }
+.kpi .k-lbl { font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.6); margin-bottom: 3px; }
+.kpi .k-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 500; }
+.kpi .k-unit { font-size: 0.65rem; color: var(--accent); margin-left: 1px; }
+
+/* Breakdown table */
+.tbl-wrap { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+thead { background: var(--navy); color: white; }
+thead th { padding: 8px 10px; text-align: center; font-weight: 500; font-size: 0.68rem; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
+thead th:first-child { text-align: left; padding-left: 12px; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:hover { background: var(--result-bg); }
+tbody tr:nth-child(even) { background: var(--row-alt); }
+tbody tr:nth-child(even):hover { background: var(--result-bg); }
+td { padding: 7px 10px; font-family: 'IBM Plex Mono', monospace; text-align: center; }
+td:first-child { font-family: 'IBM Plex Sans', sans-serif; text-align: left; padding-left: 12px; font-weight: 500; color: var(--text2); font-size: 0.8rem; }
+td.z { color: #bdbdbd; }
+tfoot tr td { background: var(--result-bg) !important; font-weight: 700; font-size: 0.85rem; color: var(--blue); border-top: 2px solid var(--blue-lt); }
+
+/* Info box */
+.info-box { background: #e8f0fe; border: 1px solid #bbdefb; border-left: 4px solid var(--blue); border-radius: 8px; padding: 0.7rem 1rem; font-size: 0.77rem; color: #1a237e; margin-top: 1rem; line-height: 1.7; }
+.info-box strong.title { display: block; margin-bottom: 0.2rem; font-size: 0.8rem; }
+
+/* Images */
+.imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.1rem; }
+@media (max-width: 580px) { .imgs { grid-template-columns: 1fr; } }
+.img-panel { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; background: white; }
+.img-lbl { background: var(--blue-mid); color: white; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; padding: 5px 10px; }
+.img-panel img { display: block; width: 100%; max-height: 200px; object-fit: contain; padding: 8px; background: #fafafa; }
+.img-miss { height: 190px; background: #f5f5f5; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b0bec5; font-size: 0.75rem; text-align: center; gap: 6px; }
+.img-cap { padding: 4px 10px 6px; font-size: 0.68rem; color: var(--text2); font-family: 'IBM Plex Mono', monospace; background: #fafafa; border-top: 1px solid var(--border); }
+
+/* Error */
+.err { background: #ffebee; border: 1px solid #ef9a9a; border-left: 4px solid #e53935; border-radius: 8px; padding: 0.8rem 1rem; color: #b71c1c; font-size: 0.83rem; line-height: 1.5; }
+
+footer { text-align: center; padding: 1.5rem; font-size: 0.7rem; color: #90a4ae; border-top: 1px solid var(--border); margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-logo">OCU</div>
+  <div class="h-text">
+    <h1>OCU Branching Loss Calculator</h1>
+    <p>Ceragon Networks — EtherHaul / MultiHaul Configuration Tool</p>
+  </div>
+  <div class="h-badge">v7.1 &nbsp;|&nbsp; 2026</div>
+</header>
+
+<div class="wrap">
+
+  <div class="notice" id="notice">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e65100" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Images require the <strong>&nbsp;PICs New&nbsp;</strong> folder to be placed in the same directory as this HTML file (extracted from the provided ZIP archive).
+  </div>
+
+  <div class="grid">
+
+    <!-- INPUT PANEL -->
+    <div class="card">
+      <div class="card-hd"><div class="dot"></div><h2>Configuration Parameters</h2></div>
+      <div class="card-bd">
+
+        <div class="fg">
+          <label>Installation Type</label>
+          <select id="s-install" onchange="onInstallChange()">
+            <option value="SM">Split Mount (SM)</option>
+            <option value="AI" disabled>All-Indoor (AI) — coming soon</option>
+          </select>
+        </div>
+
+        <div class="fr">
+          <div class="fg">
+            <label>Frequency Band</label>
+            <select id="s-band" onchange="updateN()"></select>
+          </div>
+          <div class="fg">
+            <label>Channel Width</label>
+            <select id="s-bw" onchange="updateN()">
+              <option value="28/30">28/30 MHz</option>
+              <option value="40">40 MHz</option>
+              <option value="56/60">56/60 MHz</option>
+              <option value="80">80 MHz</option>
+              <option value="112">112 MHz</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fr">
+          <div class="fg">
+            <label>Protection</label>
+            <select id="s-prot" onchange="onProtChange()">
+              <option value="No">No Protection</option>
+              <option value="SD">Space Diversity (SD)</option>
+              <option value="HSB">Hot Standby (HSB)</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Arrangement</label>
+            <select id="s-arr" onchange="updateN()"></select>
+          </div>
+        </div>
+
+        <div class="fr">
+          <div class="fg">
+            <label>Adjacent Channel</label>
+            <select id="s-adj" onchange="updateN()">
+              <option value="">No</option>
+              <option value="ADJ">Yes (Adjacent)</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>Configuration (N radios)</label>
+            <select id="s-n" onchange="updateCfgId()"></select>
+          </div>
+        </div>
+
+        <div class="cfg-id">Config ID: <span id="cfg-id-txt">—</span></div>
+
+        <button class="calc-btn" onclick="calculate()">⚡&nbsp; Calculate Branching Loss</button>
+
+      </div>
+    </div>
+
+    <!-- RESULTS PANEL -->
+    <div class="card">
+      <div class="card-hd"><div class="dot"></div><h2>Branching Loss Results</h2></div>
+      <div class="card-bd">
+
+        <div class="placeholder" id="ph">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/>
+            <line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="16" x2="12" y2="16"/>
+          </svg>
+          <p>Select your configuration parameters<br>and click <strong>Calculate Branching Loss</strong></p>
+        </div>
+
+        <div class="r-content" id="rc">
+          <div class="kpis">
+            <div class="kpi"><div class="k-lbl">TX Loss</div><div class="k-val" id="kpi-tx">—</div><div class="k-unit">dB</div></div>
+            <div class="kpi"><div class="k-lbl">RX Loss</div><div class="k-val" id="kpi-rx">—</div><div class="k-unit">dB</div></div>
+            <div class="kpi hi"><div class="k-lbl">Link Loss</div><div class="k-val" id="kpi-link">—</div><div class="k-unit">dB</div></div>
+            <div class="kpi"><div class="k-lbl">Per Terminal</div><div class="k-val" id="kpi-term">—</div><div class="k-unit">dB</div></div>
+          </div>
+
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th>Unit Loss (dB)</th>
+                  <th>Qty TX</th>
+                  <th>TX Loss (dB)</th>
+                  <th>Qty RX</th>
+                  <th>RX Loss (dB)</th>
+                </tr>
+              </thead>
+              <tbody id="tb"></tbody>
+              <tfoot>
+                <tr>
+                  <td><b>Total</b></td>
+                  <td>—</td>
+                  <td id="ft-txq">—</td>
+                  <td id="ft-txl">—</td>
+                  <td id="ft-rxq">—</td>
+                  <td id="ft-rxl">—</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div class="info-box" id="info-box"></div>
+          <div class="imgs" id="imgs"></div>
+        </div>
+
+        <div id="err-box" style="display:none"></div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>OCU Branching Loss Calculator &nbsp;|&nbsp; Ceragon Networks Ltd. &nbsp;|&nbsp; Derived from EHMH_Configurator v7</footer>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────
+const SM = {"2+0 XPIC": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.45, "terminal": 2.23, "coupling_pic": "CCDP", "config_pic": "2+0 XPIC"}, "3+0 XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.95, "terminal": 2.48, "coupling_pic": "CCDP nADJ", "config_pic": "3+0 XPIC"}, "4+0 XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.95, "terminal": 2.48, "coupling_pic": "CCDP nADJ", "config_pic": "4+0 XPIC"}, "5+0 XPIC": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.5, "terminal": 2.75, "coupling_pic": "CCDP nADJ", "config_pic": "5+0 XPIC"}, "6+0 XPIC": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.5, "terminal": 2.75, "coupling_pic": "CCDP nADJ", "config_pic": "6+0 XPIC"}, "7+0 XPIC": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6, "terminal": 3.0, "coupling_pic": "CCDP nADJ", "config_pic": "7+0 XPIC"}, "8+0 XPIC": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6, "terminal": 3.0, "coupling_pic": "CCDP nADJ", "config_pic": "8+0 XPIC"}, "10+0 XPIC": {"ocu": 5, "tx": {"filter": 1.0, "1xCirc": 5.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6.65, "terminal": 3.33, "coupling_pic": "CCDP nADJ", "config_pic": "10+0 XPIC"}, "12+0 XPIC": {"ocu": 6, "tx": {"filter": 1.0, "1xCirc": 6.0, "2xCirc": 4.0, "Short U-bend": 3.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.15, "terminal": 3.58, "coupling_pic": "CCDP nADJ", "config_pic": "12+0 XPIC"}, "14+0 XPIC": {"ocu": 7, "tx": {"filter": 1.0, "1xCirc": 7.0, "2xCirc": 5.0, "Short U-bend": 3.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.7, "terminal": 3.85, "coupling_pic": "CCDP nADJ", "config_pic": "14+0 XPIC"}, "16+0 XPIC": {"ocu": 8, "tx": {"filter": 1.0, "1xCirc": 8.0, "2xCirc": 6.0, "Short U-bend": 4.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 8.2, "terminal": 4.1, "coupling_pic": "CCDP nADJ", "config_pic": "16+0 XPIC"}, "2+0 SD XPIC": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.45, "terminal": 2.23, "coupling_pic": "CCDPx", "config_pic": "2+0 SD XPIC"}, "4+0 SD XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.95, "terminal": 2.48, "coupling_pic": "CCDPx nADJ", "config_pic": "4+0 SD XPIC"}, "6+0 SD XPIC": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.5, "terminal": 2.75, "coupling_pic": "CCDPx nADJ", "config_pic": "6+0 SD XPIC"}, "8+0 SD XPIC": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6, "terminal": 3.0, "coupling_pic": "CCDPx nADJ", "config_pic": "8+0 SD XPIC"}, "10+0 SD XPIC": {"ocu": 5, "tx": {"filter": 1.0, "1xCirc": 5.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6.65, "terminal": 3.33, "coupling_pic": "CCDPx nADJ", "config_pic": "10+0 SD XPIC"}, "12+0 SD XPIC": {"ocu": 6, "tx": {"filter": 1.0, "1xCirc": 6.0, "2xCirc": 4.0, "Short U-bend": 3.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.15, "terminal": 3.58, "coupling_pic": "CCDPx nADJ", "config_pic": "12+0 SD XPIC"}, "14+0 SD XPIC": {"ocu": 7, "tx": {"filter": 1.0, "1xCirc": 7.0, "2xCirc": 5.0, "Short U-bend": 3.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.7, "terminal": 3.85, "coupling_pic": "CCDPx nADJ", "config_pic": "14+0 SD XPIC"}, "16+0 SD XPIC": {"ocu": 8, "tx": {"filter": 1.0, "1xCirc": 8.0, "2xCirc": 6.0, "Short U-bend": 4.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 8.2, "terminal": 4.1, "coupling_pic": "CCDPx nADJ", "config_pic": "16+0 SD XPIC"}, "3+0 ADJ XPIC": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.45, "terminal": 5.72, "coupling_pic": "CCDP ADJ", "config_pic": "3+0 ADJ XPIC"}, "4+0 ADJ XPIC": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.45, "terminal": 5.72, "coupling_pic": "CCDP ADJ", "config_pic": "4+0 ADJ XPIC"}, "5+0 ADJ XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "CCDP ADJ", "config_pic": "5+0 ADJ XPIC"}, "6+0 ADJ XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "CCDP ADJ", "config_pic": "6+0 ADJ XPIC"}, "7+0 ADJ XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "CCDP ADJ", "config_pic": "7+0 ADJ XPIC"}, "8+0 ADJ XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "CCDP ADJ", "config_pic": "8+0 ADJ XPIC"}, "10+0 ADJ XPIC": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.6, "terminal": 6.3, "coupling_pic": "CCDP ADJ", "config_pic": "10+0 ADJ XPIC"}, "12+0 ADJ XPIC": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.6, "terminal": 6.3, "coupling_pic": "CCDP ADJ", "config_pic": "12+0 ADJ XPIC"}, "14+0 ADJ XPIC": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13.1, "terminal": 6.55, "coupling_pic": "CCDP ADJ", "config_pic": "14+0 ADJ XPIC"}, "16+0 ADJ XPIC": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13.1, "terminal": 6.55, "coupling_pic": "CCDP ADJ", "config_pic": "16+0 ADJ XPIC"}, "4+0 SD ADJ XPIC": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.45, "terminal": 5.72, "coupling_pic": "CCDPx ADJ", "config_pic": "4+0 SD ADJ XPIC"}, "6+0 SD ADJ XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "CCDPx ADJ", "config_pic": "6+0 SD ADJ XPIC"}, "8+0 SD ADJ XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "CCDPx ADJ", "config_pic": "8+0 SD ADJ XPIC"}, "10+0 SD ADJ XPIC": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.6, "terminal": 6.3, "coupling_pic": "CCDPx ADJ", "config_pic": "10+0 SD ADJ XPIC"}, "12+0 SD ADJ XPIC": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.6, "terminal": 6.3, "coupling_pic": "CCDPx ADJ", "config_pic": "12+0 SD ADJ XPIC"}, "14+0 SD ADJ XPIC": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13.1, "terminal": 6.55, "coupling_pic": "CCDPx ADJ", "config_pic": "14+0 SD ADJ XPIC"}, "16+0 SD ADJ XPIC": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13.1, "terminal": 6.55, "coupling_pic": "CCDPx ADJ", "config_pic": "16+0 SD ADJ XPIC"}, "2+2 HSB XPIC": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 1.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 1.0}, "link": 7.25, "terminal": 3.62, "coupling_pic": "CCDPx", "config_pic": "2+2 HSB XPIC"}, "4+4 HSB XPIC": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 1.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 1.0}, "link": 7.75, "terminal": 3.88, "coupling_pic": "CCDPx nADJ", "config_pic": "4+4 HSB XPIC"}, "2+0 SD DP": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.45, "terminal": 2.23, "coupling_pic": "DPx nADJ", "config_pic": "2+0 SD DP"}, "3+0 SD DP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.95, "terminal": 2.48, "coupling_pic": "DPx nADJ", "config_pic": "3+0 SD DP"}, "4+0 SD DP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.95, "terminal": 2.48, "coupling_pic": "DPx nADJ", "config_pic": "4+0 SD DP"}, "5+0 SD DP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.5, "terminal": 2.75, "coupling_pic": "DPx nADJ", "config_pic": "5+0 SD DP"}, "6+0 SD DP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.5, "terminal": 2.75, "coupling_pic": "DPx nADJ", "config_pic": "6+0 SD DP"}, "7+0 SD DP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6, "terminal": 3.0, "coupling_pic": "DPx nADJ", "config_pic": "7+0 SD DP"}, "8+0 SD DP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6, "terminal": 3.0, "coupling_pic": "DPx nADJ", "config_pic": "8+0 SD DP"}, "3+0 SD ADJ DP": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.45, "terminal": 5.72, "coupling_pic": "ACCPx", "config_pic": "3+0 SD ADJ DP"}, "4+0 SD ADJ DP": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.45, "terminal": 5.72, "coupling_pic": "ACCPx", "config_pic": "4+0 SD ADJ DP"}, "5+0 SD ADJ DP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCPx", "config_pic": "5+0 SD ADJ DP"}, "6+0 SD ADJ DP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCPx", "config_pic": "6+0 SD ADJ DP"}, "7+0 SD ADJ DP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCPx", "config_pic": "7+0 SD ADJ DP"}, "8+0 SD ADJ DP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCPx", "config_pic": "8+0 SD ADJ DP"}, "1+0 SP": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.45, "terminal": 2.23, "coupling_pic": "SP", "config_pic": "1+0 SP"}, "2+0 SP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.25, "terminal": 2.62, "coupling_pic": "SP nADJ", "config_pic": "2+0 SP"}, "3+0 SP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.75, "terminal": 2.88, "coupling_pic": "SP nADJ", "config_pic": "3+0 SP"}, "4+0 SP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6.25, "terminal": 3.12, "coupling_pic": "SP nADJ", "config_pic": "4+0 SP"}, "5+0 SP": {"ocu": 5, "tx": {"filter": 1.0, "1xCirc": 5.0, "2xCirc": 4.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6.9, "terminal": 3.45, "coupling_pic": "SP nADJ", "config_pic": "5+0 SP"}, "6+0 SP": {"ocu": 6, "tx": {"filter": 1.0, "1xCirc": 6.0, "2xCirc": 5.0, "Short U-bend": 2.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.45, "terminal": 3.73, "coupling_pic": "SP nADJ", "config_pic": "6+0 SP"}, "7+0 SP": {"ocu": 7, "tx": {"filter": 1.0, "1xCirc": 7.0, "2xCirc": 6.0, "Short U-bend": 3.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.95, "terminal": 3.98, "coupling_pic": "SP nADJ", "config_pic": "7+0 SP"}, "8+0 SP": {"ocu": 8, "tx": {"filter": 1.0, "1xCirc": 8.0, "2xCirc": 7.0, "Short U-bend": 4.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 8.45, "terminal": 4.22, "coupling_pic": "SP nADJ", "config_pic": "8+0 SP"}, "1+0 SD SP": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.45, "terminal": 2.23, "coupling_pic": "SPx", "config_pic": "1+0 SD SP"}, "2+0 SD SP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 4.95, "terminal": 2.48, "coupling_pic": "SPx nADJ", "config_pic": "2+0 SD SP"}, "3+0 SD SP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 5.5, "terminal": 2.75, "coupling_pic": "SPx nADJ", "config_pic": "3+0 SD SP"}, "4+0 SD SP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6, "terminal": 3.0, "coupling_pic": "SPx nADJ", "config_pic": "4+0 SD SP"}, "5+0 SD SP": {"ocu": 5, "tx": {"filter": 1.0, "1xCirc": 5.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 6.65, "terminal": 3.33, "coupling_pic": "SPx nADJ", "config_pic": "5+0 SD SP"}, "6+0 SD SP": {"ocu": 6, "tx": {"filter": 1.0, "1xCirc": 6.0, "2xCirc": 4.0, "Short U-bend": 3.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.15, "terminal": 3.58, "coupling_pic": "SPx nADJ", "config_pic": "6+0 SD SP"}, "7+0 SD SP": {"ocu": 7, "tx": {"filter": 1.0, "1xCirc": 7.0, "2xCirc": 5.0, "Short U-bend": 3.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 7.7, "terminal": 3.85, "coupling_pic": "SPx nADJ", "config_pic": "7+0 SD SP"}, "8+0 SD SP": {"ocu": 8, "tx": {"filter": 1.0, "1xCirc": 8.0, "2xCirc": 6.0, "Short U-bend": 4.0, "Long U-bend": 2.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 0.0}, "link": 8.2, "terminal": 4.1, "coupling_pic": "SPx nADJ", "config_pic": "8+0 SD SP"}, "2+0 ADJ SP": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.45, "terminal": 5.72, "coupling_pic": "ACCP", "config_pic": "2+0 ADJ SP"}, "3+0 ADJ SP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCP", "config_pic": "3+0 ADJ SP"}, "4+0 ADJ SP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCP", "config_pic": "4+0 ADJ SP"}, "5+0 ADJ SP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.5, "terminal": 6.25, "coupling_pic": "ACCP", "config_pic": "5+0 ADJ SP"}, "6+0 ADJ SP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.5, "terminal": 6.25, "coupling_pic": "ACCP", "config_pic": "6+0 ADJ SP"}, "7+0 ADJ SP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13, "terminal": 6.5, "coupling_pic": "ACCP", "config_pic": "7+0 ADJ SP"}, "8+0 ADJ SP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13, "terminal": 6.5, "coupling_pic": "ACCP", "config_pic": "8+0 ADJ SP"}, "10+0 ADJ SP": {"ocu": 5, "tx": {"filter": 1.0, "1xCirc": 5.0, "2xCirc": 4.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 1.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13.9, "terminal": 6.95, "coupling_pic": "ACCP", "config_pic": "10+0 ADJ SP"}, "12+0 ADJ SP": {"ocu": 6, "tx": {"filter": 1.0, "1xCirc": 6.0, "2xCirc": 5.0, "Short U-bend": 3.0, "Long U-bend": 1.0, "2ft flex": 1.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 14.4, "terminal": 7.2, "coupling_pic": "ACCP", "config_pic": "12+0 ADJ SP"}, "14+0 ADJ SP": {"ocu": 7, "tx": {"filter": 1.0, "1xCirc": 7.0, "2xCirc": 6.0, "Short U-bend": 3.0, "Long U-bend": 2.0, "2ft flex": 1.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 14.95, "terminal": 7.47, "coupling_pic": "ACCP", "config_pic": "14+0 ADJ SP"}, "16+0 ADJ SP": {"ocu": 8, "tx": {"filter": 1.0, "1xCirc": 8.0, "2xCirc": 7.0, "Short U-bend": 4.0, "Long U-bend": 2.0, "2ft flex": 1.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 15.45, "terminal": 7.72, "coupling_pic": "ACCP", "config_pic": "16+0 ADJ SP"}, "2+0 SD ADJ SP": {"ocu": 1, "tx": {"filter": 1.0, "1xCirc": 1.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.45, "terminal": 5.72, "coupling_pic": "ACCPx", "config_pic": "2+0 SD ADJ SP"}, "3+0 SD ADJ SP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCPx", "config_pic": "3+0 SD ADJ SP"}, "4+0 SD ADJ SP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 1.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 11.95, "terminal": 5.97, "coupling_pic": "ACCPx", "config_pic": "4+0 SD ADJ SP"}, "5+0 SD ADJ SP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.6, "terminal": 6.3, "coupling_pic": "ACCPx", "config_pic": "5+0 SD ADJ SP"}, "6+0 SD ADJ SP": {"ocu": 3, "tx": {"filter": 1.0, "1xCirc": 3.0, "2xCirc": 2.0, "Short U-bend": 1.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 12.6, "terminal": 6.3, "coupling_pic": "ACCPx", "config_pic": "6+0 SD ADJ SP"}, "7+0 SD ADJ SP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13.1, "terminal": 6.55, "coupling_pic": "ACCPx", "config_pic": "7+0 SD ADJ SP"}, "8+0 SD ADJ SP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 1.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 1.0, "CPLR": 0.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 1.0, "CPLR": 0.0}, "link": 13.1, "terminal": 6.55, "coupling_pic": "ACCPx", "config_pic": "8+0 SD ADJ SP"}, "2+2 HSB SP": {"ocu": 2, "tx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 1.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 1.0, "SPLT": 0.0, "CPLR": 1.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 1.0}, "link": 8.15, "terminal": 4.08, "coupling_pic": "SP nADJ", "config_pic": "2+2 HSB SP"}, "4+4 HSB SP": {"ocu": 4, "tx": {"filter": 1.0, "1xCirc": 4.0, "2xCirc": 3.0, "Short U-bend": 2.0, "Long U-bend": 0.0, "2ft flex": 1.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 1.0}, "rx": {"filter": 1.0, "1xCirc": 2.0, "2xCirc": 0.0, "Short U-bend": 0.0, "Long U-bend": 0.0, "2ft flex": 0.0, "4ft flex": 0.0, "SPLT": 0.0, "CPLR": 1.0}, "link": 9.05, "terminal": 4.53, "coupling_pic": "SP nADJ", "config_pic": "4+4 HSB SP"}};
+const AI = {"AI_2+0 XPIC": {"4/5/L6GHz": {"28/30": 1.7, "40": 1.5, "56/60": 1.5, "80": 2.7, "112": 1.9}, "U6": {"28/30": 2.2, "40": 1.9, "56/60": 1.9, "80": 2.7, "112": 1.9}, "7GHz": {"28/30": 2.3, "40": 2.1, "56/60": 2.1, "80": 2.7, "112": 1.9}, "8GHz": {"28/30": 2.6, "40": 2.2, "56/60": 2.2, "80": 2.7, "112": 1.9}, "11GHz": {"28/30": 3.1, "40": 2.6, "56/60": 2.4, "80": 2.7, "112": 1.9}}, "AI_3+0 XPIC": {"4/5/L6GHz": {"28/30": 1.9, "40": 1.7, "56/60": 1.7, "80": 2.9, "112": 2.1}, "U6": {"28/30": 2.4, "40": 2.1, "56/60": 2.1, "80": 2.9, "112": 2.1}, "7GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 2.9, "112": 2.1}, "8GHz": {"28/30": 2.8, "40": 2.4, "56/60": 2.4, "80": 2.9, "112": 2.1}, "11GHz": {"28/30": 3.3, "40": 2.8, "56/60": 2.6, "80": 2.9, "112": 2.1}}, "AI_4+0 XPIC": {"4/5/L6GHz": {"28/30": 1.9, "40": 1.7, "56/60": 1.7, "80": 2.9, "112": 2.1}, "U6": {"28/30": 2.4, "40": 2.1, "56/60": 2.1, "80": 2.9, "112": 2.1}, "7GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 2.9, "112": 2.1}, "8GHz": {"28/30": 2.8, "40": 2.4, "56/60": 2.4, "80": 2.9, "112": 2.1}, "11GHz": {"28/30": 3.3, "40": 2.8, "56/60": 2.6, "80": 2.9, "112": 2.1}}, "AI_5+0 XPIC": {"4/5/L6GHz": {"28/30": 2.2, "40": 2.0, "56/60": 2.0, "80": 3.2, "112": 2.4}, "U6": {"28/30": 2.7, "40": 2.4, "56/60": 2.4, "80": 3.2, "112": 2.4}, "7GHz": {"28/30": 2.8, "40": 2.6, "56/60": 2.6, "80": 3.2, "112": 2.4}, "8GHz": {"28/30": 3.1, "40": 2.7, "56/60": 2.7, "80": 3.2, "112": 2.4}, "11GHz": {"28/30": 3.6, "40": 3.1, "56/60": 2.9, "80": 3.2, "112": 2.4}}, "AI_6+0 XPIC": {"4/5/L6GHz": {"28/30": 2.2, "40": 2.0, "56/60": 2.0, "80": 3.2, "112": 2.4}, "U6": {"28/30": 2.7, "40": 2.4, "56/60": 2.4, "80": 3.2, "112": 2.4}, "7GHz": {"28/30": 2.8, "40": 2.6, "56/60": 2.6, "80": 3.2, "112": 2.4}, "8GHz": {"28/30": 3.1, "40": 2.7, "56/60": 2.7, "80": 3.2, "112": 2.4}, "11GHz": {"28/30": 3.6, "40": 3.1, "56/60": 2.9, "80": 3.2, "112": 2.4}}, "AI_7+0 XPIC": {"4/5/L6GHz": {"28/30": 2.4, "40": 2.2, "56/60": 2.2, "80": 3.4, "112": 2.6}, "U6": {"28/30": 2.9, "40": 2.6, "56/60": 2.6, "80": 3.4, "112": 2.6}, "7GHz": {"28/30": 3.0, "40": 2.8, "56/60": 2.8, "80": 3.4, "112": 2.6}, "8GHz": {"28/30": 3.3, "40": 2.9, "56/60": 2.9, "80": 3.4, "112": 2.6}, "11GHz": {"28/30": 3.8, "40": 3.3, "56/60": 3.1, "80": 3.4, "112": 2.6}}, "AI_8+0 XPIC": {"4/5/L6GHz": {"28/30": 2.4, "40": 2.2, "56/60": 2.2, "80": 3.4, "112": 2.6}, "U6": {"28/30": 2.9, "40": 2.6, "56/60": 2.6, "80": 3.4, "112": 2.6}, "7GHz": {"28/30": 3.0, "40": 2.8, "56/60": 2.8, "80": 3.4, "112": 2.6}, "8GHz": {"28/30": 3.3, "40": 2.9, "56/60": 2.9, "80": 3.4, "112": 2.6}, "11GHz": {"28/30": 3.8, "40": 3.3, "56/60": 3.1, "80": 3.4, "112": 2.6}}, "AI_10+0 XPIC": {"4/5/L6GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 3.5, "112": 2.7}, "U6": {"28/30": 3.0, "40": 2.7, "56/60": 2.7, "80": 3.5, "112": 2.7}, "7GHz": {"28/30": 3.1, "40": 2.9, "56/60": 2.9, "80": 3.5, "112": 2.7}, "8GHz": {"28/30": 3.4, "40": 3.0, "56/60": 3.0, "80": 3.5, "112": 2.7}, "11GHz": {"28/30": 3.9, "40": 3.4, "56/60": 3.2, "80": 3.5, "112": 2.7}}, "AI_12+0 XPIC": {"4/5/L6GHz": {"28/30": 2.8, "40": 2.6, "56/60": 2.6, "80": 3.8, "112": 3.0}, "U6": {"28/30": 3.3, "40": 3.0, "56/60": 3.0, "80": 3.8, "112": 3.0}, "7GHz": {"28/30": 3.4, "40": 3.2, "56/60": 3.2, "80": 3.8, "112": 3.0}, "8GHz": {"28/30": 3.7, "40": 3.3, "56/60": 3.3, "80": 3.8, "112": 3.0}, "11GHz": {"28/30": 4.2, "40": 3.7, "56/60": 3.5, "80": 3.8, "112": 3.0}}, "AI_14+0 XPIC": {"4/5/L6GHz": {"28/30": 3.0, "40": 2.8, "56/60": 2.8, "80": 4.0, "112": 3.2}, "U6": {"28/30": 3.5, "40": 3.2, "56/60": 3.2, "80": 4.0, "112": 3.2}, "7GHz": {"28/30": 3.6, "40": 3.4, "56/60": 3.4, "80": 4.0, "112": 3.2}, "8GHz": {"28/30": 3.9, "40": 3.5, "56/60": 3.5, "80": 4.0, "112": 3.2}, "11GHz": {"28/30": 4.4, "40": 3.9, "56/60": 3.7, "80": 4.0, "112": 3.2}}, "AI_16+0 XPIC": {"4/5/L6GHz": {"28/30": 3.3, "40": 3.1, "56/60": 3.1, "80": 4.3, "112": 3.5}, "U6": {"28/30": 3.8, "40": 3.5, "56/60": 3.5, "80": 4.3, "112": 3.5}, "7GHz": {"28/30": 3.9, "40": 3.7, "56/60": 3.7, "80": 4.3, "112": 3.5}, "8GHz": {"28/30": 4.2, "40": 3.8, "56/60": 3.8, "80": 4.3, "112": 3.5}, "11GHz": {"28/30": 4.7, "40": 4.2, "56/60": 4.0, "80": 4.3, "112": 3.5}}, "AI_2+0 SD XPIC": {"4/5/L6GHz": {"28/30": 1.8, "40": 1.6, "56/60": 1.6, "80": 2.8, "112": 2.0}, "U6": {"28/30": 2.3, "40": 2.0, "56/60": 2.0, "80": 2.8, "112": 2.0}, "7GHz": {"28/30": 2.4, "40": 2.2, "56/60": 2.2, "80": 2.8, "112": 2.0}, "8GHz": {"28/30": 2.7, "40": 2.3, "56/60": 2.3, "80": 2.8, "112": 2.0}, "11GHz": {"28/30": 3.2, "40": 2.7, "56/60": 2.5, "80": 2.8, "112": 2.0}}, "AI_4+0 SD XPIC": {"4/5/L6GHz": {"28/30": 2.0, "40": 1.8, "56/60": 1.8, "80": 3.0, "112": 2.2}, "U6": {"28/30": 2.5, "40": 2.2, "56/60": 2.2, "80": 3.0, "112": 2.2}, "7GHz": {"28/30": 2.6, "40": 2.4, "56/60": 2.4, "80": 3.0, "112": 2.2}, "8GHz": {"28/30": 2.9, "40": 2.5, "56/60": 2.5, "80": 3.0, "112": 2.2}, "11GHz": {"28/30": 3.4, "40": 2.9, "56/60": 2.7, "80": 3.0, "112": 2.2}}, "AI_6+0 SD XPIC": {"4/5/L6GHz": {"28/30": 2.3, "40": 2.1, "56/60": 2.1, "80": 3.3, "112": 2.5}, "U6": {"28/30": 2.8, "40": 2.5, "56/60": 2.5, "80": 3.3, "112": 2.5}, "7GHz": {"28/30": 2.9, "40": 2.7, "56/60": 2.7, "80": 3.3, "112": 2.5}, "8GHz": {"28/30": 3.2, "40": 2.8, "56/60": 2.8, "80": 3.3, "112": 2.5}, "11GHz": {"28/30": 3.7, "40": 3.2, "56/60": 3.0, "80": 3.3, "112": 2.5}}, "AI_8+0 SD XPIC": {"4/5/L6GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 3.5, "112": 2.7}, "U6": {"28/30": 3.0, "40": 2.7, "56/60": 2.7, "80": 3.5, "112": 2.7}, "7GHz": {"28/30": 3.1, "40": 2.9, "56/60": 2.9, "80": 3.5, "112": 2.7}, "8GHz": {"28/30": 3.4, "40": 3.0, "56/60": 3.0, "80": 3.5, "112": 2.7}, "11GHz": {"28/30": 3.9, "40": 3.4, "56/60": 3.2, "80": 3.5, "112": 2.7}}, "AI_10+0 SD XPIC": {"4/5/L6GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 3.5, "112": 2.7}, "U6": {"28/30": 3.0, "40": 2.7, "56/60": 2.7, "80": 3.5, "112": 2.7}, "7GHz": {"28/30": 3.1, "40": 2.9, "56/60": 2.9, "80": 3.5, "112": 2.7}, "8GHz": {"28/30": 3.4, "40": 3.0, "56/60": 3.0, "80": 3.5, "112": 2.7}, "11GHz": {"28/30": 3.9, "40": 3.4, "56/60": 3.2, "80": 3.5, "112": 2.7}}, "AI_12+0 SD XPIC": {"4/5/L6GHz": {"28/30": 2.8, "40": 2.6, "56/60": 2.6, "80": 3.8, "112": 3.0}, "U6": {"28/30": 3.3, "40": 3.0, "56/60": 3.0, "80": 3.8, "112": 3.0}, "7GHz": {"28/30": 3.4, "40": 3.2, "56/60": 3.2, "80": 3.8, "112": 3.0}, "8GHz": {"28/30": 3.7, "40": 3.3, "56/60": 3.3, "80": 3.8, "112": 3.0}, "11GHz": {"28/30": 4.2, "40": 3.7, "56/60": 3.5, "80": 3.8, "112": 3.0}}, "AI_14+0 SD XPIC": {"4/5/L6GHz": {"28/30": 3.0, "40": 2.8, "56/60": 2.8, "80": 4.0, "112": 3.2}, "U6": {"28/30": 3.5, "40": 3.2, "56/60": 3.2, "80": 4.0, "112": 3.2}, "7GHz": {"28/30": 3.6, "40": 3.4, "56/60": 3.4, "80": 4.0, "112": 3.2}, "8GHz": {"28/30": 3.9, "40": 3.5, "56/60": 3.5, "80": 4.0, "112": 3.2}, "11GHz": {"28/30": 4.4, "40": 3.9, "56/60": 3.7, "80": 4.0, "112": 3.2}}, "AI_16+0 SD XPIC": {"4/5/L6GHz": {"28/30": 3.3, "40": 3.1, "56/60": 3.1, "80": 4.3, "112": 3.5}, "U6": {"28/30": 3.8, "40": 3.5, "56/60": 3.5, "80": 4.3, "112": 3.5}, "7GHz": {"28/30": 3.9, "40": 3.7, "56/60": 3.7, "80": 4.3, "112": 3.5}, "8GHz": {"28/30": 4.2, "40": 3.8, "56/60": 3.8, "80": 4.3, "112": 3.5}, "11GHz": {"28/30": 4.7, "40": 4.2, "56/60": 4.0, "80": 4.3, "112": 3.5}}, "AI_3+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.1, "40": 4.9, "56/60": 4.9, "80": 6.1, "112": 5.3}, "U6": {"28/30": 5.6, "40": 5.3, "56/60": 5.3, "80": 6.1, "112": 5.3}, "7GHz": {"28/30": 5.7, "40": 5.5, "56/60": 5.5, "80": 6.1, "112": 5.3}, "8GHz": {"28/30": 6.0, "40": 5.6, "56/60": 5.6, "80": 6.1, "112": 5.3}, "11GHz": {"28/30": 6.5, "40": 6.0, "56/60": 5.8, "80": 6.1, "112": 5.3}}, "AI_4+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.1, "40": 4.9, "56/60": 4.9, "80": 6.1, "112": 5.3}, "U6": {"28/30": 5.6, "40": 5.3, "56/60": 5.3, "80": 6.1, "112": 5.3}, "7GHz": {"28/30": 5.7, "40": 5.5, "56/60": 5.5, "80": 6.1, "112": 5.3}, "8GHz": {"28/30": 6.0, "40": 5.6, "56/60": 5.6, "80": 6.1, "112": 5.3}, "11GHz": {"28/30": 6.5, "40": 6.0, "56/60": 5.8, "80": 6.1, "112": 5.3}}, "AI_5+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_6+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_7+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_8+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_10+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.6, "112": 5.8}, "U6": {"28/30": 6.1, "40": 5.8, "56/60": 5.8, "80": 6.6, "112": 5.8}, "7GHz": {"28/30": 6.2, "40": 6.0, "56/60": 6.0, "80": 6.6, "112": 5.8}, "8GHz": {"28/30": 6.5, "40": 6.1, "56/60": 6.1, "80": 6.6, "112": 5.8}, "11GHz": {"28/30": 7.0, "40": 6.5, "56/60": 6.3, "80": 6.6, "112": 5.8}}, "AI_12+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.6, "112": 5.8}, "U6": {"28/30": 6.1, "40": 5.8, "56/60": 5.8, "80": 6.6, "112": 5.8}, "7GHz": {"28/30": 6.2, "40": 6.0, "56/60": 6.0, "80": 6.6, "112": 5.8}, "8GHz": {"28/30": 6.5, "40": 6.1, "56/60": 6.1, "80": 6.6, "112": 5.8}, "11GHz": {"28/30": 7.0, "40": 6.5, "56/60": 6.3, "80": 6.6, "112": 5.8}}, "AI_14+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_16+0 ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_4+0 SD ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.1, "40": 4.9, "56/60": 4.9, "80": 6.1, "112": 5.3}, "U6": {"28/30": 5.6, "40": 5.3, "56/60": 5.3, "80": 6.1, "112": 5.3}, "7GHz": {"28/30": 5.7, "40": 5.5, "56/60": 5.5, "80": 6.1, "112": 5.3}, "8GHz": {"28/30": 6.0, "40": 5.6, "56/60": 5.6, "80": 6.1, "112": 5.3}, "11GHz": {"28/30": 6.5, "40": 6.0, "56/60": 5.8, "80": 6.1, "112": 5.3}}, "AI_6+0 SD ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_8+0 SD ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_10+0 SD ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.6, "112": 5.8}, "U6": {"28/30": 6.1, "40": 5.8, "56/60": 5.8, "80": 6.6, "112": 5.8}, "7GHz": {"28/30": 6.2, "40": 6.0, "56/60": 6.0, "80": 6.6, "112": 5.8}, "8GHz": {"28/30": 6.5, "40": 6.1, "56/60": 6.1, "80": 6.6, "112": 5.8}, "11GHz": {"28/30": 7.0, "40": 6.5, "56/60": 6.3, "80": 6.6, "112": 5.8}}, "AI_12+0 SD ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.6, "112": 5.8}, "U6": {"28/30": 6.1, "40": 5.8, "56/60": 5.8, "80": 6.6, "112": 5.8}, "7GHz": {"28/30": 6.2, "40": 6.0, "56/60": 6.0, "80": 6.6, "112": 5.8}, "8GHz": {"28/30": 6.5, "40": 6.1, "56/60": 6.1, "80": 6.6, "112": 5.8}, "11GHz": {"28/30": 7.0, "40": 6.5, "56/60": 6.3, "80": 6.6, "112": 5.8}}, "AI_14+0 SD ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_16+0 SD ADJ XPIC": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_2+2 HSB XPIC": {"4/5/L6GHz": {"28/30": 3.1, "40": 2.9, "56/60": 2.9, "80": 4.1, "112": 3.3}, "U6": {"28/30": 3.6, "40": 3.3, "56/60": 3.3, "80": 4.1, "112": 3.3}, "7GHz": {"28/30": 3.7, "40": 3.5, "56/60": 3.5, "80": 4.1, "112": 3.3}, "8GHz": {"28/30": 4.0, "40": 3.6, "56/60": 3.6, "80": 4.1, "112": 3.3}, "11GHz": {"28/30": 4.5, "40": 4.0, "56/60": 3.8, "80": 4.1, "112": 3.3}}, "AI_4+4 HSB XPIC": {"4/5/L6GHz": {"28/30": 3.4, "40": 3.2, "56/60": 3.2, "80": 4.4, "112": 3.6}, "U6": {"28/30": 3.9, "40": 3.6, "56/60": 3.6, "80": 4.4, "112": 3.6}, "7GHz": {"28/30": 4.0, "40": 3.8, "56/60": 3.8, "80": 4.4, "112": 3.6}, "8GHz": {"28/30": 4.3, "40": 3.9, "56/60": 3.9, "80": 4.4, "112": 3.6}, "11GHz": {"28/30": 4.8, "40": 4.3, "56/60": 4.1, "80": 4.4, "112": 3.6}}, "AI_2+0 SD DP": {"4/5/L6GHz": {"28/30": 1.8, "40": 1.6, "56/60": 1.6, "80": 2.8, "112": 2.0}, "U6": {"28/30": 2.3, "40": 2.0, "56/60": 2.0, "80": 2.8, "112": 2.0}, "7GHz": {"28/30": 2.4, "40": 2.2, "56/60": 2.2, "80": 2.8, "112": 2.0}, "8GHz": {"28/30": 2.7, "40": 2.3, "56/60": 2.3, "80": 2.8, "112": 2.0}, "11GHz": {"28/30": 3.2, "40": 2.7, "56/60": 2.5, "80": 2.8, "112": 2.0}}, "AI_3+0 SD DP": {"4/5/L6GHz": {"28/30": 2.0, "40": 1.8, "56/60": 1.8, "80": 3.0, "112": 2.2}, "U6": {"28/30": 2.5, "40": 2.2, "56/60": 2.2, "80": 3.0, "112": 2.2}, "7GHz": {"28/30": 2.6, "40": 2.4, "56/60": 2.4, "80": 3.0, "112": 2.2}, "8GHz": {"28/30": 2.9, "40": 2.5, "56/60": 2.5, "80": 3.0, "112": 2.2}, "11GHz": {"28/30": 3.4, "40": 2.9, "56/60": 2.7, "80": 3.0, "112": 2.2}}, "AI_4+0 SD DP": {"4/5/L6GHz": {"28/30": 2.0, "40": 1.8, "56/60": 1.8, "80": 3.0, "112": 2.2}, "U6": {"28/30": 2.5, "40": 2.2, "56/60": 2.2, "80": 3.0, "112": 2.2}, "7GHz": {"28/30": 2.6, "40": 2.4, "56/60": 2.4, "80": 3.0, "112": 2.2}, "8GHz": {"28/30": 2.9, "40": 2.5, "56/60": 2.5, "80": 3.0, "112": 2.2}, "11GHz": {"28/30": 3.4, "40": 2.9, "56/60": 2.7, "80": 3.0, "112": 2.2}}, "AI_5+0 SD DP": {"4/5/L6GHz": {"28/30": 2.3, "40": 2.1, "56/60": 2.1, "80": 3.3, "112": 2.5}, "U6": {"28/30": 2.8, "40": 2.5, "56/60": 2.5, "80": 3.3, "112": 2.5}, "7GHz": {"28/30": 2.9, "40": 2.7, "56/60": 2.7, "80": 3.3, "112": 2.5}, "8GHz": {"28/30": 3.2, "40": 2.8, "56/60": 2.8, "80": 3.3, "112": 2.5}, "11GHz": {"28/30": 3.7, "40": 3.2, "56/60": 3.0, "80": 3.3, "112": 2.5}}, "AI_6+0 SD DP": {"4/5/L6GHz": {"28/30": 2.3, "40": 2.1, "56/60": 2.1, "80": 3.3, "112": 2.5}, "U6": {"28/30": 2.8, "40": 2.5, "56/60": 2.5, "80": 3.3, "112": 2.5}, "7GHz": {"28/30": 2.9, "40": 2.7, "56/60": 2.7, "80": 3.3, "112": 2.5}, "8GHz": {"28/30": 3.2, "40": 2.8, "56/60": 2.8, "80": 3.3, "112": 2.5}, "11GHz": {"28/30": 3.7, "40": 3.2, "56/60": 3.0, "80": 3.3, "112": 2.5}}, "AI_7+0 SD DP": {"4/5/L6GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 3.5, "112": 2.7}, "U6": {"28/30": 3.0, "40": 2.7, "56/60": 2.7, "80": 3.5, "112": 2.7}, "7GHz": {"28/30": 3.1, "40": 2.9, "56/60": 2.9, "80": 3.5, "112": 2.7}, "8GHz": {"28/30": 3.4, "40": 3.0, "56/60": 3.0, "80": 3.5, "112": 2.7}, "11GHz": {"28/30": 3.9, "40": 3.4, "56/60": 3.2, "80": 3.5, "112": 2.7}}, "AI_8+0 SD DP": {"4/5/L6GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 3.5, "112": 2.7}, "U6": {"28/30": 3.0, "40": 2.7, "56/60": 2.7, "80": 3.5, "112": 2.7}, "7GHz": {"28/30": 3.1, "40": 2.9, "56/60": 2.9, "80": 3.5, "112": 2.7}, "8GHz": {"28/30": 3.4, "40": 3.0, "56/60": 3.0, "80": 3.5, "112": 2.7}, "11GHz": {"28/30": 3.9, "40": 3.4, "56/60": 3.2, "80": 3.5, "112": 2.7}}, "AI_3+0 SD ADJ DP": {"4/5/L6GHz": {"28/30": 5.1, "40": 4.9, "56/60": 4.9, "80": 6.1, "112": 5.3}, "U6": {"28/30": 5.6, "40": 5.3, "56/60": 5.3, "80": 6.1, "112": 5.3}, "7GHz": {"28/30": 5.7, "40": 5.5, "56/60": 5.5, "80": 6.1, "112": 5.3}, "8GHz": {"28/30": 6.0, "40": 5.6, "56/60": 5.6, "80": 6.1, "112": 5.3}, "11GHz": {"28/30": 6.5, "40": 6.0, "56/60": 5.8, "80": 6.1, "112": 5.3}}, "AI_4+0 SD ADJ DP": {"4/5/L6GHz": {"28/30": 5.1, "40": 4.9, "56/60": 4.9, "80": 6.1, "112": 5.3}, "U6": {"28/30": 5.6, "40": 5.3, "56/60": 5.3, "80": 6.1, "112": 5.3}, "7GHz": {"28/30": 5.7, "40": 5.5, "56/60": 5.5, "80": 6.1, "112": 5.3}, "8GHz": {"28/30": 6.0, "40": 5.6, "56/60": 5.6, "80": 6.1, "112": 5.3}, "11GHz": {"28/30": 6.5, "40": 6.0, "56/60": 5.8, "80": 6.1, "112": 5.3}}, "AI_5+0 SD ADJ DP": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_6+0 SD ADJ DP": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_7+0 SD ADJ DP": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_8+0 SD ADJ DP": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_1+0 SP": {"4/5/L6GHz": {"28/30": 1.7, "40": 1.5, "56/60": 1.5, "80": 2.7, "112": 1.9}, "U6": {"28/30": 2.2, "40": 1.9, "56/60": 1.9, "80": 2.7, "112": 1.9}, "7GHz": {"28/30": 2.3, "40": 2.1, "56/60": 2.1, "80": 2.7, "112": 1.9}, "8GHz": {"28/30": 2.6, "40": 2.2, "56/60": 2.2, "80": 2.7, "112": 1.9}, "11GHz": {"28/30": 3.1, "40": 2.6, "56/60": 2.4, "80": 2.7, "112": 1.9}}, "AI_2+0 SP": {"4/5/L6GHz": {"28/30": 1.9, "40": 1.7, "56/60": 1.7, "80": 2.9, "112": 2.1}, "U6": {"28/30": 2.4, "40": 2.1, "56/60": 2.1, "80": 2.9, "112": 2.1}, "7GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 2.9, "112": 2.1}, "8GHz": {"28/30": 2.8, "40": 2.4, "56/60": 2.4, "80": 2.9, "112": 2.1}, "11GHz": {"28/30": 3.3, "40": 2.8, "56/60": 2.6, "80": 2.9, "112": 2.1}}, "AI_3+0 SP": {"4/5/L6GHz": {"28/30": 2.2, "40": 2.0, "56/60": 2.0, "80": 3.2, "112": 2.4}, "U6": {"28/30": 2.7, "40": 2.4, "56/60": 2.4, "80": 3.2, "112": 2.4}, "7GHz": {"28/30": 2.8, "40": 2.6, "56/60": 2.6, "80": 3.2, "112": 2.4}, "8GHz": {"28/30": 3.1, "40": 2.7, "56/60": 2.7, "80": 3.2, "112": 2.4}, "11GHz": {"28/30": 3.6, "40": 3.1, "56/60": 2.9, "80": 3.2, "112": 2.4}}, "AI_4+0 SP": {"4/5/L6GHz": {"28/30": 2.4, "40": 2.2, "56/60": 2.2, "80": 3.4, "112": 2.6}, "U6": {"28/30": 2.9, "40": 2.6, "56/60": 2.6, "80": 3.4, "112": 2.6}, "7GHz": {"28/30": 3.0, "40": 2.8, "56/60": 2.8, "80": 3.4, "112": 2.6}, "8GHz": {"28/30": 3.3, "40": 2.9, "56/60": 2.9, "80": 3.4, "112": 2.6}, "11GHz": {"28/30": 3.8, "40": 3.3, "56/60": 3.1, "80": 3.4, "112": 2.6}}, "AI_5+0 SP": {"4/5/L6GHz": {"28/30": 2.7, "40": 2.5, "56/60": 2.5, "80": 3.7, "112": 2.9}, "U6": {"28/30": 3.2, "40": 2.9, "56/60": 2.9, "80": 3.7, "112": 2.9}, "7GHz": {"28/30": 3.3, "40": 3.1, "56/60": 3.1, "80": 3.7, "112": 2.9}, "8GHz": {"28/30": 3.6, "40": 3.2, "56/60": 3.2, "80": 3.7, "112": 2.9}, "11GHz": {"28/30": 4.1, "40": 3.6, "56/60": 3.4, "80": 3.7, "112": 2.9}}, "AI_6+0 SP": {"4/5/L6GHz": {"28/30": 2.9, "40": 2.7, "56/60": 2.7, "80": 3.9, "112": 3.1}, "U6": {"28/30": 3.4, "40": 3.1, "56/60": 3.1, "80": 3.9, "112": 3.1}, "7GHz": {"28/30": 3.5, "40": 3.3, "56/60": 3.3, "80": 3.9, "112": 3.1}, "8GHz": {"28/30": 3.8, "40": 3.4, "56/60": 3.4, "80": 3.9, "112": 3.1}, "11GHz": {"28/30": 4.3, "40": 3.8, "56/60": 3.6, "80": 3.9, "112": 3.1}}, "AI_7+0 SP": {"4/5/L6GHz": {"28/30": 3.2, "40": 3.0, "56/60": 3.0, "80": 4.2, "112": 3.4}, "U6": {"28/30": 3.7, "40": 3.4, "56/60": 3.4, "80": 4.2, "112": 3.4}, "7GHz": {"28/30": 3.8, "40": 3.6, "56/60": 3.6, "80": 4.2, "112": 3.4}, "8GHz": {"28/30": 4.1, "40": 3.7, "56/60": 3.7, "80": 4.2, "112": 3.4}, "11GHz": {"28/30": 4.6, "40": 4.1, "56/60": 3.9, "80": 4.2, "112": 3.4}}, "AI_8+0 SP": {"4/5/L6GHz": {"28/30": 3.4, "40": 3.2, "56/60": 3.2, "80": 4.4, "112": 3.6}, "U6": {"28/30": 3.9, "40": 3.6, "56/60": 3.6, "80": 4.4, "112": 3.6}, "7GHz": {"28/30": 4.0, "40": 3.8, "56/60": 3.8, "80": 4.4, "112": 3.6}, "8GHz": {"28/30": 4.3, "40": 3.9, "56/60": 3.9, "80": 4.4, "112": 3.6}, "11GHz": {"28/30": 4.8, "40": 4.3, "56/60": 4.1, "80": 4.4, "112": 3.6}}, "AI_1+0 SD SP": {"4/5/L6GHz": {"28/30": 1.7, "40": 1.5, "56/60": 1.5, "80": 2.7, "112": 1.9}, "U6": {"28/30": 2.2, "40": 1.9, "56/60": 1.9, "80": 2.7, "112": 1.9}, "7GHz": {"28/30": 2.3, "40": 2.1, "56/60": 2.1, "80": 2.7, "112": 1.9}, "8GHz": {"28/30": 2.6, "40": 2.2, "56/60": 2.2, "80": 2.7, "112": 1.9}, "11GHz": {"28/30": 3.1, "40": 2.6, "56/60": 2.4, "80": 2.7, "112": 1.9}}, "AI_2+0 SD SP": {"4/5/L6GHz": {"28/30": 1.9, "40": 1.7, "56/60": 1.7, "80": 2.9, "112": 2.1}, "U6": {"28/30": 2.4, "40": 2.1, "56/60": 2.1, "80": 2.9, "112": 2.1}, "7GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 2.9, "112": 2.1}, "8GHz": {"28/30": 2.8, "40": 2.4, "56/60": 2.4, "80": 2.9, "112": 2.1}, "11GHz": {"28/30": 3.3, "40": 2.8, "56/60": 2.6, "80": 2.9, "112": 2.1}}, "AI_3+0 SD SP": {"4/5/L6GHz": {"28/30": 2.2, "40": 2.0, "56/60": 2.0, "80": 3.2, "112": 2.4}, "U6": {"28/30": 2.7, "40": 2.4, "56/60": 2.4, "80": 3.2, "112": 2.4}, "7GHz": {"28/30": 2.8, "40": 2.6, "56/60": 2.6, "80": 3.2, "112": 2.4}, "8GHz": {"28/30": 3.1, "40": 2.7, "56/60": 2.7, "80": 3.2, "112": 2.4}, "11GHz": {"28/30": 3.6, "40": 3.1, "56/60": 2.9, "80": 3.2, "112": 2.4}}, "AI_4+0 SD SP": {"4/5/L6GHz": {"28/30": 2.4, "40": 2.2, "56/60": 2.2, "80": 3.4, "112": 2.6}, "U6": {"28/30": 2.9, "40": 2.6, "56/60": 2.6, "80": 3.4, "112": 2.6}, "7GHz": {"28/30": 3.0, "40": 2.8, "56/60": 2.8, "80": 3.4, "112": 2.6}, "8GHz": {"28/30": 3.3, "40": 2.9, "56/60": 2.9, "80": 3.4, "112": 2.6}, "11GHz": {"28/30": 3.8, "40": 3.3, "56/60": 3.1, "80": 3.4, "112": 2.6}}, "AI_5+0 SD SP": {"4/5/L6GHz": {"28/30": 2.5, "40": 2.3, "56/60": 2.3, "80": 3.5, "112": 2.7}, "U6": {"28/30": 3.0, "40": 2.7, "56/60": 2.7, "80": 3.5, "112": 2.7}, "7GHz": {"28/30": 3.1, "40": 2.9, "56/60": 2.9, "80": 3.5, "112": 2.7}, "8GHz": {"28/30": 3.4, "40": 3.0, "56/60": 3.0, "80": 3.5, "112": 2.7}, "11GHz": {"28/30": 3.9, "40": 3.4, "56/60": 3.2, "80": 3.5, "112": 2.7}}, "AI_6+0 SD SP": {"4/5/L6GHz": {"28/30": 2.8, "40": 2.6, "56/60": 2.6, "80": 3.8, "112": 3.0}, "U6": {"28/30": 3.3, "40": 3.0, "56/60": 3.0, "80": 3.8, "112": 3.0}, "7GHz": {"28/30": 3.4, "40": 3.2, "56/60": 3.2, "80": 3.8, "112": 3.0}, "8GHz": {"28/30": 3.7, "40": 3.3, "56/60": 3.3, "80": 3.8, "112": 3.0}, "11GHz": {"28/30": 4.2, "40": 3.7, "56/60": 3.5, "80": 3.8, "112": 3.0}}, "AI_7+0 SD SP": {"4/5/L6GHz": {"28/30": 3.0, "40": 2.8, "56/60": 2.8, "80": 4.0, "112": 3.2}, "U6": {"28/30": 3.5, "40": 3.2, "56/60": 3.2, "80": 4.0, "112": 3.2}, "7GHz": {"28/30": 3.6, "40": 3.4, "56/60": 3.4, "80": 4.0, "112": 3.2}, "8GHz": {"28/30": 3.9, "40": 3.5, "56/60": 3.5, "80": 4.0, "112": 3.2}, "11GHz": {"28/30": 4.4, "40": 3.9, "56/60": 3.7, "80": 4.0, "112": 3.2}}, "AI_8+0 SD SP": {"4/5/L6GHz": {"28/30": 3.3, "40": 3.1, "56/60": 3.1, "80": 4.3, "112": 3.5}, "U6": {"28/30": 3.8, "40": 3.5, "56/60": 3.5, "80": 4.3, "112": 3.5}, "7GHz": {"28/30": 3.9, "40": 3.7, "56/60": 3.7, "80": 4.3, "112": 3.5}, "8GHz": {"28/30": 4.2, "40": 3.8, "56/60": 3.8, "80": 4.3, "112": 3.5}, "11GHz": {"28/30": 4.7, "40": 4.2, "56/60": 4.0, "80": 4.3, "112": 3.5}}, "AI_2+0 ADJ SP": {"4/5/L6GHz": {"28/30": 5.0, "40": 4.8, "56/60": 4.8, "80": 6.0, "112": 5.2}, "U6": {"28/30": 5.5, "40": 5.2, "56/60": 5.2, "80": 6.0, "112": 5.2}, "7GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.0, "112": 5.2}, "8GHz": {"28/30": 5.9, "40": 5.5, "56/60": 5.5, "80": 6.0, "112": 5.2}, "11GHz": {"28/30": 6.4, "40": 5.9, "56/60": 5.7, "80": 6.0, "112": 5.2}}, "AI_3+0 ADJ SP": {"4/5/L6GHz": {"28/30": 5.2, "40": 5.0, "56/60": 5.0, "80": 6.2, "112": 5.4}, "U6": {"28/30": 5.7, "40": 5.4, "56/60": 5.4, "80": 6.2, "112": 5.4}, "7GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.2, "112": 5.4}, "8GHz": {"28/30": 6.1, "40": 5.7, "56/60": 5.7, "80": 6.2, "112": 5.4}, "11GHz": {"28/30": 6.6, "40": 6.1, "56/60": 5.9, "80": 6.2, "112": 5.4}}, "AI_4+0 ADJ SP": {"4/5/L6GHz": {"28/30": 5.2, "40": 5.0, "56/60": 5.0, "80": 6.2, "112": 5.4}, "U6": {"28/30": 5.7, "40": 5.4, "56/60": 5.4, "80": 6.2, "112": 5.4}, "7GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.2, "112": 5.4}, "8GHz": {"28/30": 6.1, "40": 5.7, "56/60": 5.7, "80": 6.2, "112": 5.4}, "11GHz": {"28/30": 6.6, "40": 6.1, "56/60": 5.9, "80": 6.2, "112": 5.4}}, "AI_5+0 ADJ SP": {"4/5/L6GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.6, "112": 5.8}, "U6": {"28/30": 6.1, "40": 5.8, "56/60": 5.8, "80": 6.6, "112": 5.8}, "7GHz": {"28/30": 6.2, "40": 6.0, "56/60": 6.0, "80": 6.6, "112": 5.8}, "8GHz": {"28/30": 6.5, "40": 6.1, "56/60": 6.1, "80": 6.6, "112": 5.8}, "11GHz": {"28/30": 7.0, "40": 6.5, "56/60": 6.3, "80": 6.6, "112": 5.8}}, "AI_6+0 ADJ SP": {"4/5/L6GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.6, "112": 5.8}, "U6": {"28/30": 6.1, "40": 5.8, "56/60": 5.8, "80": 6.6, "112": 5.8}, "7GHz": {"28/30": 6.2, "40": 6.0, "56/60": 6.0, "80": 6.6, "112": 5.8}, "8GHz": {"28/30": 6.5, "40": 6.1, "56/60": 6.1, "80": 6.6, "112": 5.8}, "11GHz": {"28/30": 7.0, "40": 6.5, "56/60": 6.3, "80": 6.6, "112": 5.8}}, "AI_7+0 ADJ SP": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_8+0 ADJ SP": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_10+0 ADJ SP": {"4/5/L6GHz": {"28/30": 6.1, "40": 5.9, "56/60": 5.9, "80": 7.1, "112": 6.3}, "U6": {"28/30": 6.6, "40": 6.3, "56/60": 6.3, "80": 7.1, "112": 6.3}, "7GHz": {"28/30": 6.7, "40": 6.5, "56/60": 6.5, "80": 7.1, "112": 6.3}, "8GHz": {"28/30": 7.0, "40": 6.6, "56/60": 6.6, "80": 7.1, "112": 6.3}, "11GHz": {"28/30": 7.5, "40": 7.0, "56/60": 6.8, "80": 7.1, "112": 6.3}}, "AI_12+0 ADJ SP": {"4/5/L6GHz": {"28/30": 6.3, "40": 6.1, "56/60": 6.1, "80": 7.3, "112": 6.5}, "U6": {"28/30": 6.8, "40": 6.5, "56/60": 6.5, "80": 7.3, "112": 6.5}, "7GHz": {"28/30": 6.9, "40": 6.7, "56/60": 6.7, "80": 7.3, "112": 6.5}, "8GHz": {"28/30": 7.2, "40": 6.8, "56/60": 6.8, "80": 7.3, "112": 6.5}, "11GHz": {"28/30": 7.7, "40": 7.2, "56/60": 7.0, "80": 7.3, "112": 6.5}}, "AI_14+0 ADJ SP": {"4/5/L6GHz": {"28/30": 6.6, "40": 6.4, "56/60": 6.4, "80": 7.6, "112": 6.8}, "U6": {"28/30": 7.1, "40": 6.8, "56/60": 6.8, "80": 7.6, "112": 6.8}, "7GHz": {"28/30": 7.2, "40": 7.0, "56/60": 7.0, "80": 7.6, "112": 6.8}, "8GHz": {"28/30": 7.5, "40": 7.1, "56/60": 7.1, "80": 7.6, "112": 6.8}, "11GHz": {"28/30": 8.0, "40": 7.5, "56/60": 7.3, "80": 7.6, "112": 6.8}}, "AI_16+0 ADJ SP": {"4/5/L6GHz": {"28/30": 6.8, "40": 6.6, "56/60": 6.6, "80": 7.8, "112": 7.0}, "U6": {"28/30": 7.3, "40": 7.0, "56/60": 7.0, "80": 7.8, "112": 7.0}, "7GHz": {"28/30": 7.4, "40": 7.2, "56/60": 7.2, "80": 7.8, "112": 7.0}, "8GHz": {"28/30": 7.7, "40": 7.3, "56/60": 7.3, "80": 7.8, "112": 7.0}, "11GHz": {"28/30": 8.2, "40": 7.7, "56/60": 7.5, "80": 7.8, "112": 7.0}}, "AI_2+0 SD ADJ SP": {"4/5/L6GHz": {"28/30": 5.0, "40": 4.8, "56/60": 4.8, "80": 6.0, "112": 5.2}, "U6": {"28/30": 5.5, "40": 5.2, "56/60": 5.2, "80": 6.0, "112": 5.2}, "7GHz": {"28/30": 5.6, "40": 5.4, "56/60": 5.4, "80": 6.0, "112": 5.2}, "8GHz": {"28/30": 5.9, "40": 5.5, "56/60": 5.5, "80": 6.0, "112": 5.2}, "11GHz": {"28/30": 6.4, "40": 5.9, "56/60": 5.7, "80": 6.0, "112": 5.2}}, "AI_3+0 SD ADJ SP": {"4/5/L6GHz": {"28/30": 5.2, "40": 5.0, "56/60": 5.0, "80": 6.2, "112": 5.4}, "U6": {"28/30": 5.7, "40": 5.4, "56/60": 5.4, "80": 6.2, "112": 5.4}, "7GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.2, "112": 5.4}, "8GHz": {"28/30": 6.1, "40": 5.7, "56/60": 5.7, "80": 6.2, "112": 5.4}, "11GHz": {"28/30": 6.6, "40": 6.1, "56/60": 5.9, "80": 6.2, "112": 5.4}}, "AI_4+0 SD ADJ SP": {"4/5/L6GHz": {"28/30": 5.3, "40": 5.1, "56/60": 5.1, "80": 6.3, "112": 5.5}, "U6": {"28/30": 5.8, "40": 5.5, "56/60": 5.5, "80": 6.3, "112": 5.5}, "7GHz": {"28/30": 5.9, "40": 5.7, "56/60": 5.7, "80": 6.3, "112": 5.5}, "8GHz": {"28/30": 6.2, "40": 5.8, "56/60": 5.8, "80": 6.3, "112": 5.5}, "11GHz": {"28/30": 6.7, "40": 6.2, "56/60": 6.0, "80": 6.3, "112": 5.5}}, "AI_5+0 SD ADJ SP": {"4/5/L6GHz": {"28/30": 5.5, "40": 5.3, "56/60": 5.3, "80": 6.5, "112": 5.7}, "U6": {"28/30": 6.0, "40": 5.7, "56/60": 5.7, "80": 6.5, "112": 5.7}, "7GHz": {"28/30": 6.1, "40": 5.9, "56/60": 5.9, "80": 6.5, "112": 5.7}, "8GHz": {"28/30": 6.4, "40": 6.0, "56/60": 6.0, "80": 6.5, "112": 5.7}, "11GHz": {"28/30": 6.9, "40": 6.4, "56/60": 6.2, "80": 6.5, "112": 5.7}}, "AI_6+0 SD ADJ SP": {"4/5/L6GHz": {"28/30": 5.5, "40": 5.3, "56/60": 5.3, "80": 6.5, "112": 5.7}, "U6": {"28/30": 6.0, "40": 5.7, "56/60": 5.7, "80": 6.5, "112": 5.7}, "7GHz": {"28/30": 6.1, "40": 5.9, "56/60": 5.9, "80": 6.5, "112": 5.7}, "8GHz": {"28/30": 6.4, "40": 6.0, "56/60": 6.0, "80": 6.5, "112": 5.7}, "11GHz": {"28/30": 6.9, "40": 6.4, "56/60": 6.2, "80": 6.5, "112": 5.7}}, "AI_7+0 SD ADJ SP": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_8+0 SD ADJ SP": {"4/5/L6GHz": {"28/30": 5.8, "40": 5.6, "56/60": 5.6, "80": 6.8, "112": 6.0}, "U6": {"28/30": 6.3, "40": 6.0, "56/60": 6.0, "80": 6.8, "112": 6.0}, "7GHz": {"28/30": 6.4, "40": 6.2, "56/60": 6.2, "80": 6.8, "112": 6.0}, "8GHz": {"28/30": 6.7, "40": 6.3, "56/60": 6.3, "80": 6.8, "112": 6.0}, "11GHz": {"28/30": 7.2, "40": 6.7, "56/60": 6.5, "80": 6.8, "112": 6.0}}, "AI_2+2 HSB SP": {"4/5/L6GHz": {"28/30": 3.3, "40": 3.1, "56/60": 3.1, "80": 4.3, "112": 3.5}, "U6": {"28/30": 3.8, "40": 3.5, "56/60": 3.5, "80": 4.3, "112": 3.5}, "7GHz": {"28/30": 3.9, "40": 3.7, "56/60": 3.7, "80": 4.3, "112": 3.5}, "8GHz": {"28/30": 4.2, "40": 3.8, "56/60": 3.8, "80": 4.3, "112": 3.5}, "11GHz": {"28/30": 4.7, "40": 4.2, "56/60": 4.0, "80": 4.3, "112": 3.5}}, "AI_4+4 HSB SP": {"4/5/L6GHz": {"28/30": 3.9, "40": 3.7, "56/60": 3.7, "80": 4.9, "112": 4.1}, "U6": {"28/30": 4.4, "40": 4.1, "56/60": 4.1, "80": 4.9, "112": 4.1}, "7GHz": {"28/30": 4.5, "40": 4.3, "56/60": 4.3, "80": 4.9, "112": 4.1}, "8GHz": {"28/30": 4.8, "40": 4.4, "56/60": 4.4, "80": 4.9, "112": 4.1}, "11GHz": {"28/30": 5.3, "40": 4.8, "56/60": 4.6, "80": 4.9, "112": 4.1}}};
+
+const SM_FILTER = {
+  '5GHz':  {'28/30':2.0,'40':2.0,'56/60':2.0,'80':2.3,'112':1.5},
+  '6GHz':  {'28/30':1.5,'40':1.4,'56/60':2.0,'80':2.3,'112':1.5},
+  '7GHz':  {'28/30':1.5,'40':1.4,'56/60':2.0,'80':2.3,'112':1.5},
+  '8GHz':  {'28/30':1.5,'40':1.4,'56/60':2.0,'80':2.3,'112':1.5},
+  '11GHz': {'28/30':2.0,'40':2.0,'56/60':2.0,'80':2.3,'112':1.5},
+};
+const UNITS = {'filter':null,'1xCirc':0.15,'2xCirc':0.25,'Short U-bend':0.10,'Long U-bend':0.15,'2ft flex':0.40,'4ft flex':0.50,'SPLT':3.30,'CPLR':1.40};
+const LABELS = {'filter':'Filter','1xCirc':'Circulator (1×)','2xCirc':'Circulator (2×)','Short U-bend':'Short U-Bend','Long U-bend':'Long U-Bend','2ft flex':'2ft Flex WG','4ft flex':'4ft Flex WG','SPLT':'Splitter','CPLR':'Coupler'};
+const SM_BANDS = ['5GHz','6GHz','7GHz','8GHz','11GHz'];
+const AI_BANDS = ['4/5/L6GHz','U6','7GHz','8GHz','11GHz'];
+const AI_BLBL  = {'4/5/L6GHz':'4/5/L6 GHz','U6':'U6 GHz','7GHz':'7 GHz','8GHz':'8 GHz','11GHz':'11 GHz'};
+
+// ─── INIT ────────────────────────────────────────────────────────────
+window.onload = () => {
+  populateBands(); populateArr(); updateN();
+  // Probe for the images folder — hide the notice if a known image loads successfully
+  const probe = new Image();
+  probe.onload  = () => { $id('notice').style.display = 'none'; };
+  probe.onerror = () => { /* folder not found — keep notice visible */ };
+  probe.src = 'PICs New/SP.jpg?' + Date.now(); // cache-bust so browser actually tries
+};
+
+function $id(id) { return document.getElementById(id); }
+function gv(id) { return $id(id).value; }
+
+function populateBands() {
+  const install = gv('s-install');
+  const bands = install === 'AI' ? AI_BANDS : SM_BANDS;
+  const prev = gv('s-band');
+  const sel = $id('s-band');
+  sel.innerHTML = '';
+  bands.forEach(b => {
+    const o = document.createElement('option');
+    o.value = b; o.text = install === 'AI' ? (AI_BLBL[b]||b) : b;
+    if (b === prev) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function populateArr() {
+  const prot = gv('s-prot');
+  const sel  = $id('s-arr');
+  const prev = sel.value;
+  sel.innerHTML = '';
+  const opts = prot === 'HSB'
+    ? [{v:'XPIC',l:'XPIC / DP'},{v:'SP',l:'SP'}]
+    : [{v:'XPIC',l:'XPIC'},{v:'DP',l:'DP'},{v:'SP',l:'SP'}];
+  opts.forEach(({v,l}) => {
+    const o = document.createElement('option');
+    o.value = v; o.text = l;
+    if (v === prev) o.selected = true;
+    sel.appendChild(o);
+  });
+  const adjSel = $id('s-adj');
+  if (prot === 'HSB') { adjSel.value = ''; adjSel.disabled = true; }
+  else { adjSel.disabled = false; }
+}
+
+function onInstallChange() { populateBands(); updateN(); }
+function onProtChange()    { populateArr(); updateN(); }
+
+function buildKey(install, n, prot, adj, arr) {
+  // DP without SD protection uses XPIC hardware
+  let ea = arr;
+  if (arr === 'DP' && prot !== 'SD') ea = 'XPIC';
+  let key;
+  if (prot === 'HSB') {
+    key = `${n}+${n} HSB ${ea === 'SP' ? 'SP' : 'XPIC'}`;
+  } else {
+    const p = [`${n}+0`];
+    if (prot === 'SD') p.push('SD');
+    if (adj === 'ADJ') p.push('ADJ');
+    p.push(ea);
+    key = p.join(' ');
+  }
+  if (install === 'AI') key = 'AI_' + key;
+  return key;
+}
+
+function validNs(install, prot, adj, arr) {
+  const data = install === 'AI' ? AI : SM;
+  const cands = prot === 'HSB' ? ['2','4'] : ['1','2','3','4','5','6','7','8','10','12','14','16'];
+  return cands.filter(n => buildKey(install, n, prot, adj, arr) in data);
+}
+
+function updateN() {
+  const [install, prot, adj, arr] = [gv('s-install'),gv('s-prot'),gv('s-adj'),gv('s-arr')];
+  const sel = $id('s-n');
+  const prev = sel.value;
+  const ns = validNs(install, prot, adj, arr);
+  sel.innerHTML = '';
+  if (!ns.length) { sel.innerHTML = '<option>N/A</option>'; }
+  else ns.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n;
+    o.text = prot === 'HSB' ? `${n}+${n} (HSB)` : `${n}+0`;
+    if (n === prev) o.selected = true;
+    sel.appendChild(o);
+  });
+  updateCfgId();
+}
+
+function updateCfgId() {
+  const [install, prot, adj, arr, n, band, bw] = [gv('s-install'),gv('s-prot'),gv('s-adj'),gv('s-arr'),gv('s-n'),gv('s-band'),gv('s-bw')];
+  const key = buildKey(install, n, prot, adj, arr);
+  $id('cfg-id-txt').textContent = `${key}  |  ${band}  |  ${bw} MHz`;
+}
+
+// ─── CALCULATE ──────────────────────────────────────────────────────
+function r2(v) { return Math.round(v * 100) / 100; }
+function fmt(v) { return v.toFixed(2); }
+
+function calculate() {
+  const [install, n, prot, adj, arr, band, bw] = [
+    gv('s-install'),gv('s-n'),gv('s-prot'),gv('s-adj'),gv('s-arr'),gv('s-band'),gv('s-bw')];
+  const key = buildKey(install, n, prot, adj, arr);
+
+  $id('ph').style.display = 'none';
+  $id('err-box').style.display = 'none';
+  $id('rc').style.display = 'none';
+
+  if (install === 'SM') {
+    const d = SM[key];
+    if (!d) { showErr(`Configuration not found: <b>${key}</b>`); return; }
+    const fl = SM_FILTER[band]?.[bw];
+    if (fl === undefined) { showErr(`No filter loss data for ${band} / ${bw} MHz`); return; }
+
+    const comps = Object.keys(UNITS);
+    let txT = 0, rxT = 0;
+    const rows = [];
+    comps.forEach(c => {
+      const u = c === 'filter' ? fl : UNITS[c];
+      const tq = d.tx[c]||0, rq = d.rx[c]||0;
+      const tl = tq*u, rl = rq*u;
+      txT += tl; rxT += rl;
+      if (tq > 0 || rq > 0) rows.push({c, u, tq, rq, tl, rl});
+    });
+    txT = r2(txT); rxT = r2(rxT);
+    const link = r2(txT + rxT);
+    const term = r2(link / 2);
+
+    $id('kpi-tx').textContent   = fmt(txT);
+    $id('kpi-rx').textContent   = fmt(rxT);
+    $id('kpi-link').textContent = fmt(link);
+    $id('kpi-term').textContent = fmt(term);
+
+    const tb = $id('tb');
+    tb.innerHTML = '';
+    rows.forEach(({c,u,tq,rq,tl,rl}) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${LABELS[c]}</td>
+        <td>${u.toFixed(2)}</td>
+        <td class="${tq===0?'z':''}">${tq||'—'}</td>
+        <td class="${tl===0?'z':''}">${tl===0?'—':fmt(tl)}</td>
+        <td class="${rq===0?'z':''}">${rq||'—'}</td>
+        <td class="${rl===0?'z':''}">${rl===0?'—':fmt(rl)}</td>`;
+      tb.appendChild(tr);
+    });
+
+    $id('ft-txq').textContent = rows.reduce((a,r)=>a+r.tq,0) || '—';
+    $id('ft-rxq').textContent = rows.reduce((a,r)=>a+r.rq,0) || '—';
+    $id('ft-txl').textContent = fmt(txT) + ' dB';
+    $id('ft-rxl').textContent = fmt(rxT) + ' dB';
+
+    $id('info-box').innerHTML = `<strong class="title">📡 Split Mount — ${key}</strong>
+      <b>OCU Units:</b> ${d.ocu} &nbsp;&bull;&nbsp;
+      <b>Band / BW:</b> ${band} / ${bw} MHz &nbsp;&bull;&nbsp;
+      <b>Filter loss:</b> ${fl.toFixed(1)} dB ea &nbsp;&bull;&nbsp;
+      <b>Link Loss:</b> ${fmt(link)} dB &nbsp;&bull;&nbsp;
+      <b>Per-terminal:</b> ${fmt(term)} dB`;
+
+    // Images
+    const ig = $id('imgs');
+    ig.innerHTML = '';
+    if (d.config_pic) ig.innerHTML += imgPanel(d.config_pic, 'Configuration Diagram');
+    if (d.coupling_pic) ig.innerHTML += imgPanel(d.coupling_pic, 'Coupling Type');
+
+  } else {
+    // AI
+    const d = AI[key];
+    if (!d) { showErr(`Configuration not found: <b>${key}</b>`); return; }
+    const loss = d[band]?.[bw];
+    if (loss === null || loss === undefined) { showErr(`No data for ${key} at ${band} / ${bw} MHz`); return; }
+
+    // AI loss value = per-terminal (equivalent to SM "Terminal" = Link/2)
+    const term = r2(loss);
+    const link = r2(loss * 2);
+
+    $id('kpi-tx').textContent   = fmt(r2(loss/2));
+    $id('kpi-rx').textContent   = fmt(r2(loss/2));
+    $id('kpi-link').textContent = fmt(link);
+    $id('kpi-term').textContent = fmt(term);
+
+    const tb = $id('tb');
+    tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#90a4ae;padding:1rem;font-family:sans-serif;font-size:0.82rem;">
+      All-Indoor configurations use pre-computed factory loss values.<br>Component breakdown is not available for AI units.
+    </td></tr>`;
+
+    $id('ft-txq').textContent = '—';
+    $id('ft-rxq').textContent = '—';
+    $id('ft-txl').textContent = fmt(r2(loss/2)) + ' dB';
+    $id('ft-rxl').textContent = fmt(r2(loss/2)) + ' dB';
+
+    $id('info-box').innerHTML = `<strong class="title">📡 All-Indoor — ${key}</strong>
+      <b>Band / BW:</b> ${band} / ${bw} MHz &nbsp;&bull;&nbsp;
+      <b>Terminal Loss:</b> ${fmt(term)} dB &nbsp;&bull;&nbsp;
+      <b>Link Loss (2×terminal):</b> ${fmt(link)} dB`;
+
+    $id('imgs').innerHTML = imgPanel(key, 'All-Indoor Configuration Diagram', true);
+  }
+
+  $id('rc').style.display = 'block';
+}
+
+function imgPanel(name, label, full) {
+  const f = `PICs New/${name}.jpg`;
+  const colSpan = full ? 'style="grid-column:1/-1"' : '';
+  return `<div class="img-panel" ${colSpan}>
+    <div class="img-lbl">${label}</div>
+    <img src="${f}" alt="${name}"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      onload="this.nextElementSibling.style.display='none'">
+    <div class="img-miss" style="display:none">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      Image not found<br><small style="font-size:0.65rem;margin-top:2px">${f}</small>
+    </div>
+    <div class="img-cap">${name}</div>
+  </div>`;
+}
+
+function showErr(msg) {
+  const b = $id('err-box');
+  b.style.display = 'block';
+  b.innerHTML = `<div class="err">⚠️ &nbsp;${msg}</div>`;
+}
+</script>
+</body>
+</html>
